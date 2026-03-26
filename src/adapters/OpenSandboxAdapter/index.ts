@@ -99,6 +99,11 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
     this.polyfillService = new CommandPolyfillService(this);
   }
 
+  get rootPath(): string {
+    const mountPath = this.createConfig.volumes?.[0]?.mountPath;
+    return mountPath ? mountPath.replace(/\/+$/, '') : '/home/sandbox';
+  }
+
   get id(): SandboxId | undefined {
     return this._id;
   }
@@ -552,7 +557,7 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
   async execute(command: string, options?: ExecuteOptions): Promise<ExecuteResult> {
     try {
       const execution = await this.sandbox.commands.run(command, {
-        workingDirectory: options?.workingDirectory,
+        workingDirectory: this.normalizePath(options?.workingDirectory),
         background: options?.background
       });
 
@@ -602,7 +607,7 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
       const execution = await this.sandbox.commands.run(
         command,
         {
-          workingDirectory: options?.workingDirectory,
+          workingDirectory: this.normalizePath(options?.workingDirectory),
           background: options?.background
         },
         sdkHandlers
@@ -635,7 +640,7 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
   ): Promise<{ sessionId: string; kill(): Promise<void> }> {
     try {
       const execution = await this.sandbox.commands.run(command, {
-        workingDirectory: options?.workingDirectory,
+        workingDirectory: this.normalizePath(options?.workingDirectory),
         background: true
       });
 

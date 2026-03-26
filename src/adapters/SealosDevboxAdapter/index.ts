@@ -25,6 +25,10 @@ export interface SealosDevboxConfig {
 export class SealosDevboxAdapter extends BaseSandboxAdapter {
   readonly provider = 'sealosdevbox' as const;
 
+  get rootPath(): string {
+    return '/home/devbox/workspace';
+  }
+
   private api: DevboxApi;
   private _id: SandboxId;
 
@@ -178,7 +182,7 @@ export class SealosDevboxAdapter extends BaseSandboxAdapter {
   // ==================== Command Execution ====================
 
   async execute(command: string, options?: ExecuteOptions): Promise<ExecuteResult> {
-    const cmd = this.buildCommand(command, options?.workingDirectory);
+    const cmd = this.buildCommand(command, this.normalizePath(options?.workingDirectory));
     try {
       const res = await this.api.exec(this._id, {
         command: cmd,

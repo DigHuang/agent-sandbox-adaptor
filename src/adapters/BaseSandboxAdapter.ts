@@ -38,6 +38,29 @@ export abstract class BaseSandboxAdapter implements ISandbox {
 
   constructor() {}
 
+  /**
+   * The root path of the sandbox filesystem.
+   * Subclasses should override this to return the provider-specific root path.
+   */
+  get rootPath(): string {
+    return '/';
+  }
+
+  /**
+   * Normalize a path relative to rootPath.
+   * - '.' or './' → rootPath
+   * - './foo' → rootPath/foo
+   * - 'foo' → rootPath/foo
+   * - '/absolute' → '/absolute' (pass through)
+   */
+  protected normalizePath(path: string = ''): string {
+    if (path === '.' || path === './') return this.rootPath;
+    const root = this.rootPath.replace(/\/+$/, '');
+    if (path.startsWith('./')) return `${root}/${path.slice(2)}`;
+    if (!path.startsWith('/')) return `${root}/${path}`;
+    return path;
+  }
+
   get status(): SandboxStatus {
     return this._status;
   }
@@ -138,7 +161,7 @@ export abstract class BaseSandboxAdapter implements ISandbox {
     );
 
     const results: FileReadResult[] = [];
-    for (const path of paths) {
+    for (const path of paths.map((p) => this.normalizePath(p))) {
       try {
         let content: Uint8Array;
         if (options?.range) {
@@ -171,7 +194,7 @@ export abstract class BaseSandboxAdapter implements ISandbox {
     );
 
     const results: FileWriteResult[] = [];
-    for (const entry of entries) {
+    for (const entry of entries.map((e) => ({ ...e, path: this.normalizePath(e.path) }))) {
       try {
         let bytesWritten: number;
 
@@ -223,7 +246,9 @@ export abstract class BaseSandboxAdapter implements ISandbox {
       'File delete not supported by this provider'
     );
 
-    const polyfillResults = await polyfillService.deleteFiles(paths);
+    const polyfillResults = await polyfillService.deleteFiles(
+      paths.map((p) => this.normalizePath(p))
+    );
     return polyfillResults.map((r) => ({
       path: r.path,
       success: r.success,
@@ -238,7 +263,10 @@ export abstract class BaseSandboxAdapter implements ISandbox {
     );
 
     await polyfillService.moveFiles(
-      entries.map((e) => ({ source: e.source, destination: e.destination }))
+      entries.map((e) => ({
+        source: this.normalizePath(e.source),
+        destination: this.normalizePath(e.destination)
+      }))
     );
   }
 
@@ -262,7 +290,10 @@ export abstract class BaseSandboxAdapter implements ISandbox {
       'Directory creation not supported by this provider'
     );
 
-    await polyfillService.createDirectories(paths, options);
+    await polyfillService.createDirectories(
+      paths.map((p) => this.normalizePath(p)),
+      options
+    );
   }
 
   async deleteDirectories(
@@ -274,7 +305,10 @@ export abstract class BaseSandboxAdapter implements ISandbox {
       'Directory deletion not supported by this provider'
     );
 
-    await polyfillService.deleteDirectories(paths, options);
+    await polyfillService.deleteDirectories(
+      paths.map((p) => this.normalizePath(p)),
+      options
+    );
   }
 
   async listDirectory(path: string): Promise<DirectoryEntry[]> {
@@ -283,7 +317,7 @@ export abstract class BaseSandboxAdapter implements ISandbox {
       'Directory listing not supported by this provider'
     );
 
-    return polyfillService.listDirectory(path);
+    return polyfillService.listDirectory(this.normalizePath(path));
   }
 
   // ==================== Streaming Operations ====================
@@ -358,7 +392,7 @@ export abstract class BaseSandboxAdapter implements ISandbox {
       'File info not supported by this provider'
     );
 
-    return polyfillService.getFileInfo(paths);
+    return polyfillService.getFileInfo(paths.map((p) => this.normalizePath(p)));
   }
 
   async setPermissions(entries: PermissionEntry[]): Promise<void> {
@@ -378,7 +412,7 @@ export abstract class BaseSandboxAdapter implements ISandbox {
       'File search not supported by this provider'
     );
 
-    return polyfillService.search(pattern, path);
+    return polyfillService.search(pattern, path !== undefined ? this.normalizePath(path) : path);
   }
 
   // ==================== IHealthCheck Implementation ====================

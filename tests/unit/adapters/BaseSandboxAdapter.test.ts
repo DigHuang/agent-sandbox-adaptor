@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { FeatureNotSupportedError, SandboxReadyTimeoutError } from '@/errors';
 import { BaseSandboxAdapter } from '@/adapters/BaseSandboxAdapter';
 import { CommandPolyfillService } from '@/polyfill/CommandPolyfillService';
@@ -31,6 +31,17 @@ class FallbackAdapter extends BaseSandboxAdapter {
       exitCode: 0,
       truncated: false
     };
+  }
+
+  // Expose protected method for testing
+  normalizePath(path?: string): string {
+    return super.normalizePath(path);
+  }
+}
+
+class CustomRootAdapter extends FallbackAdapter {
+  override get rootPath(): string {
+    return '/home/devbox';
   }
 }
 
@@ -480,5 +491,75 @@ describe('BaseSandboxAdapter', () => {
     const adapter = new MockSandboxAdapter({ supportsPauseResume: false });
     await adapter.stop();
     expect(adapter.status.state).toBe('Stopped');
+  });
+
+  // ==================== normalizePath ====================
+
+  describe('normalizePath', () => {
+    describe('default rootPath = "/"', () => {
+      let adapter: FallbackAdapter;
+      beforeEach(() => {
+        adapter = new FallbackAdapter();
+      });
+
+      it('should return rootPath for "."', () => {
+        expect(adapter.normalizePath('.')).toBe('/');
+      });
+
+      it('should return rootPath for "./"', () => {
+        expect(adapter.normalizePath('./')).toBe('/');
+      });
+
+      it('should return rootPath for undefined (default param)', () => {
+        expect(adapter.normalizePath()).toBe('/');
+      });
+
+      it('should join rootPath with relative path', () => {
+        expect(adapter.normalizePath('foo/bar')).toBe('/foo/bar');
+      });
+
+      it('should join rootPath with "./" prefixed path', () => {
+        expect(adapter.normalizePath('./foo/bar')).toBe('/foo/bar');
+      });
+
+      it('should pass through absolute path unchanged', () => {
+        expect(adapter.normalizePath('/absolute/path')).toBe('/absolute/path');
+      });
+
+      it('should pass through root "/" unchanged', () => {
+        expect(adapter.normalizePath('/')).toBe('/');
+      });
+    });
+
+    describe('custom rootPath = "/home/devbox"', () => {
+      let adapter: CustomRootAdapter;
+      beforeEach(() => {
+        adapter = new CustomRootAdapter();
+      });
+
+      it('should return rootPath for "."', () => {
+        expect(adapter.normalizePath('.')).toBe('/home/devbox');
+      });
+
+      it('should return rootPath for "./"', () => {
+        expect(adapter.normalizePath('./')).toBe('/home/devbox');
+      });
+
+      it('should return rootPath with trailing slash for undefined (default param)', () => {
+        expect(adapter.normalizePath()).toBe('/home/devbox/');
+      });
+
+      it('should join rootPath with relative path', () => {
+        expect(adapter.normalizePath('project/src')).toBe('/home/devbox/project/src');
+      });
+
+      it('should join rootPath with "./" prefixed path', () => {
+        expect(adapter.normalizePath('./project/src')).toBe('/home/devbox/project/src');
+      });
+
+      it('should pass through absolute path unchanged', () => {
+        expect(adapter.normalizePath('/tmp/output.csv')).toBe('/tmp/output.csv');
+      });
+    });
   });
 });

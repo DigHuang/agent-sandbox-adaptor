@@ -24,6 +24,10 @@ import type { E2BConfig } from './type';
 export class E2BAdapter extends BaseSandboxAdapter {
   readonly provider = 'e2b' as const;
 
+  get rootPath(): string {
+    return '/home/user';
+  }
+
   private sandbox: Sandbox | null = null;
   private _id: SandboxId; // 上游指定的 ID
 
@@ -199,7 +203,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
     try {
       const sandbox = await this.ensureSandbox();
       const result = await sandbox.commands.run(command, {
-        cwd: options?.workingDirectory,
+        cwd: this.normalizePath(options?.workingDirectory),
         timeoutMs: options?.timeoutMs
       });
 
@@ -234,7 +238,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
     try {
       const results: FileReadResult[] = [];
 
-      for (const path of paths) {
+      for (const path of paths.map((p) => this.normalizePath(p))) {
         try {
           const content = await sandbox.files.read(path);
           results.push({
@@ -282,7 +286,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
         }
 
         return {
-          path: f.path,
+          path: this.normalizePath(f.path),
           data
         };
       });
@@ -334,7 +338,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
     try {
       const results: FileDeleteResult[] = [];
 
-      for (const path of paths) {
+      for (const path of paths.map((p) => this.normalizePath(p))) {
         try {
           await sandbox.files.remove(path);
           results.push({
@@ -366,7 +370,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
 
     try {
       for (const { source, destination } of moves) {
-        await sandbox.files.rename(source, destination);
+        await sandbox.files.rename(this.normalizePath(source), this.normalizePath(destination));
       }
     } catch (error) {
       throw new CommandExecutionError(
@@ -381,7 +385,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
     const sandbox = await this.ensureSandbox();
 
     try {
-      for (const path of paths) {
+      for (const path of paths.map((p) => this.normalizePath(p))) {
         await sandbox.files.makeDir(path);
       }
     } catch (error) {
@@ -397,7 +401,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
     const sandbox = await this.ensureSandbox();
 
     try {
-      for (const path of paths) {
+      for (const path of paths.map((p) => this.normalizePath(p))) {
         await sandbox.files.remove(path);
       }
     } catch (error) {
@@ -413,7 +417,7 @@ export class E2BAdapter extends BaseSandboxAdapter {
     const sandbox = await this.ensureSandbox();
 
     try {
-      const entries = await sandbox.files.list(path);
+      const entries = await sandbox.files.list(this.normalizePath(path));
 
       return entries.map((entry) => {
         const isDirectory = entry.type === FileType.DIR;
