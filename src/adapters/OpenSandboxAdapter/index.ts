@@ -434,7 +434,7 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
   async stop(): Promise<void> {
     try {
       this._status = { state: 'Stopping' };
-      await this.sandbox.pause();
+      await this.sandbox.kill();
       this._status = { state: 'Stopped' };
     } catch (error) {
       const message = error instanceof SandboxException ? error.error.message : undefined;
