@@ -16,6 +16,8 @@ import type {
   Endpoint,
   ExecuteOptions,
   ExecuteResult,
+  FileWriteEntry,
+  FileWriteResult,
   ImageSpec,
   ResourceLimits,
   SandboxId,
@@ -91,7 +93,7 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
 
   constructor(
     private connectionConfig: OpenSandboxConnectionConfig,
-    private createConfig: OpenSandboxConfigType
+    private createConfig?: OpenSandboxConfigType
   ) {
     super();
     this.runtime = connectionConfig.runtime ?? 'docker';
@@ -100,7 +102,7 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
   }
 
   get rootPath(): string {
-    const mountPath = this.createConfig.volumes?.[0]?.mountPath;
+    const mountPath = this.createConfig?.volumes?.[0]?.mountPath;
     return mountPath ? mountPath.replace(/\/+$/, '') : '/home/sandbox';
   }
 
@@ -320,6 +322,12 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
   }
   async create(): Promise<void> {
     const cfg = this.createConfig;
+    if (!cfg) {
+      throw new ConnectionError(
+        'Cannot create sandbox: createConfig is required but was not provided',
+        this.connectionConfig.baseUrl
+      );
+    }
     try {
       this._status = { state: 'Creating' };
 
@@ -551,6 +559,48 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
         error instanceof Error ? error : undefined
       );
     }
+  }
+
+  // ==================== File System ====================
+  async writeFiles(entries: FileWriteEntry[]): Promise<FileWriteResult[]> {
+    const results: FileWriteResult[] = [];
+
+    for (const entry of entries) {
+      const normalizedPath = this.normalizePath(entry.path);
+      try {
+        await this.sandbox.files.writeFiles([
+          {
+            path: normalizedPath,
+            data: entry.data,
+            mode: entry.mode,
+            owner: entry.owner,
+            group: entry.group
+          }
+        ]);
+
+        let bytesWritten = 0;
+        if (typeof entry.data === 'string') {
+          bytesWritten = new TextEncoder().encode(entry.data).length;
+        } else if (entry.data instanceof Uint8Array) {
+          bytesWritten = entry.data.byteLength;
+        } else if (entry.data instanceof ArrayBuffer) {
+          bytesWritten = entry.data.byteLength;
+        } else if (entry.data instanceof Blob) {
+          bytesWritten = entry.data.size;
+        }
+        // ReadableStream: bytesWritten = 0（流已传给 SDK，无法重新计算）
+
+        results.push({ path: normalizedPath, bytesWritten, error: null });
+      } catch (error) {
+        results.push({
+          path: normalizedPath,
+          bytesWritten: 0,
+          error: error instanceof Error ? error : new Error(String(error))
+        });
+      }
+    }
+
+    return results;
   }
 
   // ==================== Command Execution ====================

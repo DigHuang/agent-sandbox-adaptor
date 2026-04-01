@@ -6,5 +6,3 @@ export * from './errors';
 export * from './interfaces';
 // Export types
 export * from './types';
-
-export type { Volume as SandboxVolume } from '../opensandbox';

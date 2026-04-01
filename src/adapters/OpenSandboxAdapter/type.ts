@@ -1,5 +1,5 @@
 import { ImageSpec, NetworkPolicy, ResourceLimits } from '@/types';
-import type { Volume } from '../../../opensandbox';
+import type { Volume } from '@alibaba-group/opensandbox';
 
 /**
  * Configuration for creating a sandbox.

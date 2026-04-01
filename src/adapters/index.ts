@@ -11,7 +11,7 @@ export { SealosDevboxAdapter } from './SealosDevboxAdapter';
 export type { SealosDevboxConfig } from './SealosDevboxAdapter';
 export { OpenSandboxAdapter } from './OpenSandboxAdapter';
 export type { OpenSandboxConfigType, OpenSandboxConnectionConfig } from './OpenSandboxAdapter';
-export type { Volume as OpenSandboxVolume } from '../../opensandbox';
+export type { Volume as OpenSandboxVolume } from '@alibaba-group/opensandbox';
 export { E2BAdapter } from './E2BAdapter';
 export type { E2BConfig } from './E2BAdapter';
 
