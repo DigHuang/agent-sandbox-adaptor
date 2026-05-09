@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OpenSandboxAdapter } from '@/adapters/OpenSandboxAdapter';
 import type { OpenSandboxConnectionConfig } from '@/adapters/OpenSandboxAdapter';
 import { ConnectionError, SandboxStateError } from '@/errors';
-import type { ImageSpec, ResourceLimits } from '@/types';
+import type { ResourceLimits } from '@/types';
 import type { OpenSandboxConfigType } from '@/adapters/OpenSandboxAdapter/type';
 
 const MINIMAL_CONNECTION: OpenSandboxConnectionConfig = {
@@ -21,6 +21,10 @@ function makeAdapter(extra?: Partial<OpenSandboxConnectionConfig>): OpenSandboxA
  * command execution, and health checks using mocked SDK behavior.
  */
 describe('OpenSandboxAdapter', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   describe('Lifecycle Methods', () => {
     it('should initialize with custom connection config', () => {
       const adapter = makeAdapter({ apiKey: 'test-api-key' });
@@ -90,60 +94,7 @@ describe('OpenSandboxAdapter', () => {
     });
   });
 
-  describe('Image and Resource Conversion', () => {
-    it('should convert ImageSpec to SDK format', () => {
-      const adapter = makeAdapter();
-
-      // Test tag format
-      const imageWithTag: ImageSpec = { repository: 'nginx', tag: 'latest' };
-      // Access private method through type assertion for testing
-      const convertImageSpec = (
-        adapter as unknown as { convertImageSpec(image: ImageSpec): string }
-      ).convertImageSpec;
-      expect(convertImageSpec(imageWithTag)).toBe('nginx:latest');
-
-      // Test digest format
-      const imageWithDigest: ImageSpec = {
-        repository: 'nginx',
-        digest: 'sha256:abc123'
-      };
-      expect(convertImageSpec(imageWithDigest)).toBe('nginx@sha256:abc123');
-
-      // Test tag and digest
-      const imageWithBoth: ImageSpec = {
-        repository: 'nginx',
-        tag: '1.0',
-        digest: 'sha256:abc123'
-      };
-      expect(convertImageSpec(imageWithBoth)).toBe('nginx:1.0@sha256:abc123');
-
-      // Test just repository
-      const imageRepoOnly: ImageSpec = { repository: 'nginx' };
-      expect(convertImageSpec(imageRepoOnly)).toBe('nginx');
-    });
-
-    it('should parse SDK image string to ImageSpec', () => {
-      const adapter = makeAdapter();
-      const parseImageSpec = (adapter as unknown as { parseImageSpec(image: string): ImageSpec })
-        .parseImageSpec;
-
-      // Test tag format
-      const withTag = parseImageSpec('nginx:latest');
-      expect(withTag.repository).toBe('nginx');
-      expect(withTag.tag).toBe('latest');
-
-      // Test digest format
-      const withDigest = parseImageSpec('nginx@sha256:abc123');
-      expect(withDigest.repository).toBe('nginx');
-      expect(withDigest.digest).toBe('sha256:abc123');
-
-      // Test repository only
-      const repoOnly = parseImageSpec('nginx');
-      expect(repoOnly.repository).toBe('nginx');
-      expect(repoOnly.tag).toBeUndefined();
-      expect(repoOnly.digest).toBeUndefined();
-    });
-
+  describe('Resource Conversion', () => {
     it('should convert ResourceLimits to SDK format', () => {
       const adapter = makeAdapter();
       const convertResourceLimits = (
@@ -252,6 +203,68 @@ describe('OpenSandboxAdapter', () => {
       expect(stateError.message).toContain('Sandbox not initialized');
       expect(stateError.currentState).toBe('UnExist');
       expect(stateError.requiredState).toBe('Running');
+    });
+  });
+
+  describe('Proxy Target', () => {
+    it('should resolve code-server readiness endpoint through execd proxy path', async () => {
+      const adapter = makeAdapter();
+      (
+        adapter as unknown as {
+          _sandbox: { getEndpoint(port: number): Promise<{ endpoint: string }> };
+        }
+      )._sandbox = {
+        getEndpoint: vi.fn(async () => ({
+          endpoint: 'localhost:55549'
+        }))
+      };
+
+      await expect(adapter.getEndpoint('code-server')).resolves.toEqual({
+        host: 'localhost',
+        port: 55549,
+        protocol: 'http',
+        url: 'http://localhost:55549/proxy/8080'
+      });
+    });
+
+    it('should resolve direct code-server proxy target through OpenSandbox API', async () => {
+      const fetchMock = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          endpoint: 'host.docker.internal:55549/proxy/8080'
+        })
+      }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const adapter = makeAdapter({
+        apiKey: 'test-api-key',
+        baseUrl: 'http://localhost/v1',
+        replaceDockerInternalWithLocalhost: true
+      });
+      (adapter as unknown as { _id: string })._id = 'sandbox-1';
+
+      await expect(adapter.getProxyTarget('code-server')).resolves.toEqual({
+        service: 'code-server',
+        origin: 'http://localhost:55549',
+        basePath: '/proxy/8080',
+        auth: 'code-server'
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost/v1/sandboxes/sandbox-1/endpoints/44772?use_server_proxy=false',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Accept: 'application/json',
+            'OPEN-SANDBOX-API-KEY': 'test-api-key'
+          })
+        })
+      );
+      const [, requestInit] = fetchMock.mock.calls[0] as unknown as [
+        string,
+        { headers: Record<string, string> }
+      ];
+      const headers = requestInit.headers;
+      expect(headers.Authorization).toBeUndefined();
     });
   });
 

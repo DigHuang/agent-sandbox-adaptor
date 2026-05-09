@@ -9,7 +9,8 @@ describe('createSandbox', () => {
       'opensandbox',
       {
         baseUrl: 'http://localhost:8080',
-        apiKey: 'test-key'
+        apiKey: 'test-key',
+        sessionId: 'test-session'
       },
       {
         image: {
@@ -25,9 +26,13 @@ describe('createSandbox', () => {
 
   it('should throw error for unknown provider', () => {
     expect(() =>
-      createSandbox('unknown' as SandboxProviderType, {}, {
-        image: { repository: 'test', tag: 'latest' }
-      } as unknown as OpenSandboxConfigType)
+      createSandbox(
+        'unknown' as SandboxProviderType,
+        {} as never,
+        {
+          image: { repository: 'test', tag: 'latest' }
+        } as unknown as OpenSandboxConfigType
+      )
     ).toThrow('Unknown provider');
   });
 });

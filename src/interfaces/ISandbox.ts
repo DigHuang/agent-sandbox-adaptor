@@ -2,6 +2,12 @@ import type { ICommandExecution } from './ICommandExecution';
 import type { IFileSystem } from './IFileSystem';
 import type { IHealthCheck } from './IHealthCheck';
 import type { ISandboxLifecycle } from './ISandboxLifecycle';
+import type {
+  Endpoint,
+  SandboxEndpointSelector,
+  SandboxProxyService,
+  SandboxProxyTarget
+} from '../types';
 
 /**
  * Unified sandbox interface.
@@ -16,4 +22,10 @@ import type { ISandboxLifecycle } from './ISandboxLifecycle';
 export interface ISandbox extends ISandboxLifecycle, ICommandExecution, IFileSystem, IHealthCheck {
   /** Provider name (e.g., 'opensandbox') */
   readonly provider: string;
+
+  /** Resolve an endpoint exposed by the sandbox provider. */
+  getEndpoint(selector: SandboxEndpointSelector): Promise<Endpoint>;
+
+  /** Resolve the upstream target used by FastGPT sandbox-proxy. */
+  getProxyTarget(service?: SandboxProxyService): Promise<SandboxProxyTarget>;
 }

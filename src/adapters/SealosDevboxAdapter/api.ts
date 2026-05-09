@@ -1,6 +1,7 @@
 import {
   type DevboxApiConfig,
   type DevboxApiResponse,
+  type DevboxCreateRequest,
   type DevboxInfoData,
   type DevboxMutationData,
   type DownloadFileParams,
@@ -46,10 +47,10 @@ export class DevboxApi {
   }
 
   /** POST /api/v1/devbox — create a devbox */
-  async create(name: string): Promise<DevboxApiResponse<DevboxMutationData>> {
+  async create(req: DevboxCreateRequest): Promise<DevboxApiResponse<DevboxMutationData>> {
     return this.request(this.url('/api/v1/devbox'), {
       method: 'POST',
-      body: JSON.stringify({ name })
+      body: JSON.stringify(req)
     });
   }
 

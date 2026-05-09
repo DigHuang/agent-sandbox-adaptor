@@ -51,6 +51,21 @@ export interface NetworkPolicy {
   allowedHosts?: string[];
 }
 
+export interface LabelSpec {
+  key: string;
+  value: string;
+}
+
+export interface LifecyclePolicy {
+  pauseAt?: string;
+  archiveAfterPauseTime?: string;
+}
+
+export interface KubeAccessPolicy {
+  enabled?: boolean;
+  roleTemplate?: 'view' | 'edit' | 'admin';
+}
+
 /**
  * Information about a sandbox.
  */
@@ -84,4 +99,40 @@ export interface Endpoint {
   port: number;
   protocol: 'http' | 'https';
   url: string;
+}
+
+/**
+ * App-facing create spec shared by callers that choose a provider at runtime.
+ * Individual adapters should map only the fields their backend actually supports.
+ */
+export interface SandboxCreateSpec {
+  image?: ImageSpec;
+  entrypoint?: string[];
+  timeout?: number;
+  timeoutSeconds?: number | null;
+  resourceLimits?: ResourceLimits;
+  env?: Record<string, string>;
+  metadata?: Record<string, unknown>;
+  labels?: LabelSpec[];
+  lifecycle?: LifecyclePolicy;
+  kubeAccess?: KubeAccessPolicy;
+  networkPolicy?: NetworkPolicy;
+  volumes?: unknown[];
+  workingDir?: string;
+  upstreamID?: string;
+  extensions?: Record<string, unknown>;
+  skipHealthCheck?: boolean;
+  readyTimeoutSeconds?: number;
+  healthCheckPollingInterval?: number;
+}
+
+export type SandboxProxyService = 'code-server';
+export type SandboxEndpointSelector = number | SandboxProxyService;
+
+export interface SandboxProxyTarget {
+  service: SandboxProxyService;
+  origin: string;
+  basePath: string;
+  auth: 'code-server';
+  password?: string;
 }

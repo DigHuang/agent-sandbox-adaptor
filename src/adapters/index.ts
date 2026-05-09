@@ -1,4 +1,8 @@
-import { SealosDevboxAdapter, type SealosDevboxConfig } from './SealosDevboxAdapter';
+import {
+  SealosDevboxAdapter,
+  type SealosDevboxConfig,
+  type SealosDevboxCreateConfig
+} from './SealosDevboxAdapter';
 import {
   OpenSandboxAdapter,
   type OpenSandboxConnectionConfig,
@@ -8,7 +12,7 @@ import { E2BAdapter, type E2BConfig } from './E2BAdapter';
 import { ISandbox } from '@/interfaces';
 
 export { SealosDevboxAdapter } from './SealosDevboxAdapter';
-export type { SealosDevboxConfig } from './SealosDevboxAdapter';
+export type { SealosDevboxConfig, SealosDevboxCreateConfig } from './SealosDevboxAdapter';
 export { OpenSandboxAdapter } from './OpenSandboxAdapter';
 export type { OpenSandboxConfigType, OpenSandboxConnectionConfig } from './OpenSandboxAdapter';
 export type { Volume as OpenSandboxVolume } from '@alibaba-group/opensandbox';
@@ -20,7 +24,7 @@ export type SandboxProviderType = 'opensandbox' | 'sealosdevbox' | 'e2b';
 /** Maps each provider name to the ISandbox config type it exposes. */
 interface SandboxConfigMap {
   opensandbox: OpenSandboxConfigType;
-  sealosdevbox: undefined;
+  sealosdevbox: SealosDevboxCreateConfig;
   e2b: undefined;
 }
 
@@ -54,7 +58,10 @@ export function createSandbox<P extends SandboxProviderType>(
       );
 
     case 'sealosdevbox':
-      return new SealosDevboxAdapter(config as SealosDevboxConfig);
+      return new SealosDevboxAdapter(
+        config as SealosDevboxConfig,
+        createConfig as SealosDevboxCreateConfig | undefined
+      );
 
     case 'e2b':
       return new E2BAdapter(config as E2BConfig);

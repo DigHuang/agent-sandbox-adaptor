@@ -59,6 +59,21 @@ export interface DevboxMutationData {
   status?: string;
 }
 
+/** Request body for the create endpoint. */
+export interface DevboxCreateRequest {
+  name: string;
+  image?: string;
+  env?: Record<string, string>;
+  labels?: Array<{ key: string; value: string }>;
+  upstreamID?: string;
+  kubeAccess?: {
+    enabled?: boolean;
+    roleTemplate?: 'view' | 'edit' | 'admin';
+  };
+  pauseAt?: string;
+  archiveAfterPauseTime?: string;
+}
+
 /** SSH connection info returned by the info endpoint. */
 export interface DevboxSshInfo {
   user: string;
@@ -71,14 +86,28 @@ export interface DevboxSshInfo {
   privateKeyBase64: string;
 }
 
+/** HTTP gateway info returned by the info endpoint. */
+export interface DevboxGatewayInfo {
+  url: string;
+  token?: string;
+  port?: number;
+  uniqueID?: string;
+}
+
 /** Response data from the GET info endpoint. */
 export interface DevboxInfoData {
   name: string;
+  image?: string;
+  creationTimestamp?: string;
   deletionTimestamp?: string | null;
   state: {
     phase: `${DevboxPhaseEnum}`;
   };
   ssh: DevboxSshInfo;
+  gateway?: DevboxGatewayInfo;
+  codeServerGateway?: DevboxGatewayInfo & {
+    password?: string;
+  };
 }
 
 /** Response data from the upload endpoint. */

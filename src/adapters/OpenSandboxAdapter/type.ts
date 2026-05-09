@@ -1,4 +1,4 @@
-import { ImageSpec, NetworkPolicy, ResourceLimits } from '@/types';
+import type { ImageSpec, NetworkPolicy, ResourceLimits } from '@/types';
 import type { Volume } from '@alibaba-group/opensandbox';
 
 /**

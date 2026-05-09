@@ -4,6 +4,7 @@ import { CommandPolyfillService } from '../polyfill/CommandPolyfillService';
 import type {
   ContentReplaceEntry,
   DirectoryEntry,
+  Endpoint,
   ExecuteOptions,
   ExecuteResult,
   FileDeleteResult,
@@ -14,9 +15,12 @@ import type {
   MoveEntry,
   PermissionEntry,
   ReadFileOptions,
+  SandboxEndpointSelector,
   SandboxId,
   SandboxInfo,
   SandboxMetrics,
+  SandboxProxyService,
+  SandboxProxyTarget,
   SandboxStatus,
   SearchResult,
   StreamHandlers
@@ -107,6 +111,22 @@ export abstract class BaseSandboxAdapter implements ISandbox {
     throw new FeatureNotSupportedError(
       'Sandbox expiration renewal not supported by this provider',
       'renewExpiration',
+      this.provider
+    );
+  }
+
+  async getEndpoint(_selector: SandboxEndpointSelector): Promise<Endpoint> {
+    throw new FeatureNotSupportedError(
+      'Endpoint resolution not supported by this provider',
+      'getEndpoint',
+      this.provider
+    );
+  }
+
+  async getProxyTarget(_service: SandboxProxyService = 'code-server'): Promise<SandboxProxyTarget> {
+    throw new FeatureNotSupportedError(
+      'Proxy target resolution not supported by this provider',
+      'getProxyTarget',
       this.provider
     );
   }

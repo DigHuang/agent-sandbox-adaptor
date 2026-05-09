@@ -24,11 +24,18 @@ export type {
 export type {
   Endpoint,
   ImageSpec,
+  KubeAccessPolicy,
+  LabelSpec,
+  LifecyclePolicy,
   NetworkPolicy,
   ResourceLimits,
+  SandboxCreateSpec,
+  SandboxEndpointSelector,
   SandboxId,
   SandboxInfo,
   SandboxMetrics,
+  SandboxProxyService,
+  SandboxProxyTarget,
   SandboxState,
   SandboxStatus
 } from './sandbox';
