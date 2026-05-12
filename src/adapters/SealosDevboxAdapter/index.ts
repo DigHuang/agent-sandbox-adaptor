@@ -193,12 +193,12 @@ export class SealosDevboxAdapter extends BaseSandboxAdapter {
   async stop(): Promise<void> {
     try {
       this._status = { state: 'Stopping' };
-      await this.api.pause(this._id);
+      await this.api.stop(this._id);
       this._status = { state: 'Stopped' };
     } catch (error) {
       throw new CommandExecutionError(
-        'Failed to pause sandbox',
-        'pause',
+        'Failed to stop sandbox',
+        'stop',
         error instanceof Error ? error : undefined
       );
     }

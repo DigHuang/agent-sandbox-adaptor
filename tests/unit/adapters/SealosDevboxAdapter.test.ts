@@ -250,4 +250,28 @@ describe('SealosDevboxAdapter', () => {
     await expect(createPromise).resolves.toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('should stop Devbox through the stop endpoint', async () => {
+    const fetchMock = vi.fn(async () => ({
+      json: async () => ({
+        code: 200,
+        message: 'ok',
+        data: {
+          name: 'devbox-1',
+          namespace: 'ns-test',
+          state: 'Stopped'
+        }
+      })
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const adapter = new SealosDevboxAdapter(CONFIG);
+
+    await expect(adapter.stop()).resolves.toBeUndefined();
+    expect(adapter.status.state).toBe('Stopped');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://devbox-server.example.com/api/v1/devbox/devbox-1/stop',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });

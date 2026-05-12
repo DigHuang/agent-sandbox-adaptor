@@ -68,6 +68,13 @@ export class DevboxApi {
     });
   }
 
+  /** POST /api/v1/devbox/{name}/stop */
+  async stop(name: string): Promise<DevboxApiResponse<DevboxMutationData>> {
+    return this.request(this.url(`/api/v1/devbox/${name}/stop`), {
+      method: 'POST'
+    });
+  }
+
   /** POST /api/v1/devbox/{name}/resume */
   async resume(name: string): Promise<DevboxApiResponse<DevboxMutationData>> {
     return this.request(this.url(`/api/v1/devbox/${name}/resume`), {

@@ -52,9 +52,10 @@ export interface ExecResponseData {
   executedAt: string;
 }
 
-/** Response data from create/pause/resume/delete endpoints. */
+/** Response data from create/pause/stop/resume/delete endpoints. */
 export interface DevboxMutationData {
   name: string;
+  namespace?: string;
   state?: string;
   status?: string;
 }
