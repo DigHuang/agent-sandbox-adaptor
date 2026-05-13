@@ -274,4 +274,26 @@ describe('SealosDevboxAdapter', () => {
       expect.objectContaining({ method: 'POST' })
     );
   });
+
+  it('should delete the provided Devbox id', async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => ({
+      json: async () => ({
+        code: String(input).includes('/api/v1/devbox/provider-devbox-1') ? 404 : 200,
+        message: 'ok',
+        data: null
+      })
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const adapter = new SealosDevboxAdapter(CONFIG);
+
+    await expect(adapter.delete('provider-devbox-1')).resolves.toBeUndefined();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://devbox-server.example.com/api/v1/devbox/provider-devbox-1',
+      expect.objectContaining({ method: 'DELETE' })
+    );
+    expect(adapter.id).toBe('provider-devbox-1');
+    expect(adapter.status.state).toBe('UnExist');
+  });
 });

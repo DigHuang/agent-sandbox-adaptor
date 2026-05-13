@@ -34,8 +34,12 @@ export interface ISandboxLifecycle {
 
   /**
    * Delete the sandbox permanently.
+   *
+   * When `sandboxId` is provided, implementations should delete that provider
+   * sandbox directly without requiring callers to first bind the adapter via
+   * `connect()`.
    */
-  delete(): Promise<void>;
+  delete(sandboxId?: SandboxId): Promise<void>;
 
   /**
    * Get detailed information about the sandbox.

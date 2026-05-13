@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { SandboxManager } from '@alibaba-group/opensandbox';
 import { OpenSandboxAdapter } from '@/adapters/OpenSandboxAdapter';
 import type { OpenSandboxConnectionConfig } from '@/adapters/OpenSandboxAdapter';
 import { ConnectionError, SandboxStateError } from '@/errors';
@@ -91,6 +92,27 @@ describe('OpenSandboxAdapter', () => {
       } catch (error) {
         expect(error instanceof ConnectionError || error instanceof Error).toBe(true);
       }
+    });
+
+    it('should delete the provided sandbox id through lifecycle API without connecting', async () => {
+      const adapter = makeAdapter();
+      const killSandbox = vi.fn(async () => undefined);
+      const close = vi.fn(async () => undefined);
+      const managerCreate = vi.spyOn(SandboxManager, 'create').mockReturnValue({
+        killSandbox,
+        close
+      } as unknown as SandboxManager);
+      const connect = vi.spyOn(adapter, 'connect').mockImplementation(async () => {
+        throw new Error('delete(sandboxId) should not connect to execd');
+      });
+
+      await expect(adapter.delete('provider-sandbox-1')).resolves.toBeUndefined();
+
+      expect(managerCreate).toHaveBeenCalledTimes(1);
+      expect(killSandbox).toHaveBeenCalledWith('provider-sandbox-1');
+      expect(close).toHaveBeenCalledTimes(1);
+      expect(connect).not.toHaveBeenCalled();
+      expect(adapter.status.state).toBe('UnExist');
     });
   });
 

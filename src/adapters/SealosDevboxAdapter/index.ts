@@ -219,10 +219,12 @@ export class SealosDevboxAdapter extends BaseSandboxAdapter {
     }
   }
 
-  async delete(): Promise<void> {
+  async delete(sandboxId?: SandboxId): Promise<void> {
     try {
+      const targetId = sandboxId ?? this._id;
       this._status = { state: 'Deleting' };
-      await this.api.delete(this._id);
+      await this.api.delete(targetId);
+      this._id = targetId;
       await this.waitUntilDeleted();
       this._status = { state: 'UnExist' };
     } catch (error) {

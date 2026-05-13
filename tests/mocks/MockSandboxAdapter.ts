@@ -89,7 +89,10 @@ export class MockSandboxAdapter extends BaseSandboxAdapter {
     this._status = { state: 'Stopped' };
   }
 
-  async delete(): Promise<void> {
+  async delete(sandboxId?: SandboxId): Promise<void> {
+    if (sandboxId) {
+      this._id = sandboxId;
+    }
     this._status = { state: 'UnExist' };
   }
 

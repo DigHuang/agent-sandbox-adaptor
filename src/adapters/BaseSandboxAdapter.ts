@@ -75,7 +75,7 @@ export abstract class BaseSandboxAdapter implements ISandbox {
   abstract create(): Promise<void>;
   abstract start(): Promise<void>;
   abstract stop(): Promise<void>;
-  abstract delete(): Promise<void>;
+  abstract delete(sandboxId?: SandboxId): Promise<void>;
   abstract getInfo(): Promise<SandboxInfo | null>;
 
   async waitUntilReady(timeoutMs: number = 120000): Promise<void> {

@@ -451,9 +451,25 @@ export class OpenSandboxAdapter extends BaseSandboxAdapter {
     }
   }
 
-  async delete(): Promise<void> {
+  async delete(sandboxId?: SandboxId): Promise<void> {
     try {
       this._status = { state: 'Deleting' };
+
+      if (sandboxId) {
+        const manager = SandboxManager.create({ connectionConfig: this._connection });
+        try {
+          await manager.killSandbox(sandboxId);
+        } finally {
+          await manager.close().catch(() => undefined);
+        }
+
+        if (sandboxId === this._id) {
+          this.sandbox = undefined;
+        }
+        this._status = { state: 'UnExist' };
+        return;
+      }
+
       await this.sandbox.kill();
       this.sandbox = undefined;
       this._status = { state: 'UnExist' };

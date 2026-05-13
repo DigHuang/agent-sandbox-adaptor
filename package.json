@@ -1,6 +1,6 @@
 {
   "name": "@fastgpt-sdk/sandbox-adapter",
-  "version": "0.0.38-beta.0",
+  "version": "0.0.39",
   "description": "Unified abstraction layer for cloud sandbox providers with adapter pattern and feature polyfilling",
   "type": "module",
   "main": "./dist/index.cjs",

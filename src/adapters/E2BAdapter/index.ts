@@ -160,7 +160,11 @@ export class E2BAdapter extends BaseSandboxAdapter {
     }
   }
 
-  async delete(): Promise<void> {
+  async delete(sandboxId?: SandboxId): Promise<void> {
+    if (sandboxId) {
+      this._id = sandboxId;
+      this.sandbox = null;
+    }
     const sandbox = await this.ensureSandbox();
 
     try {
